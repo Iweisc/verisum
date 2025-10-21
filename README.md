@@ -3,7 +3,7 @@
 
 ## Idea
 
-ok listen. the internet is loud. everyone’s yapping, nobody’s concise. verisum fixes that. you ask, it finds exactly what you need, trims the fluff, checks if it’s bullshitting, and tells you where it got the info. simple, fast, no nonsense. we highlight misinformation, cite sources, and keep your brain un-fried. think tl;dr but smarter and sassier.
+The core problem we are trying to solve is fuck u. no just kidding please keep reading, verisum is a project that allows you to consume the consice/exact content your looking for so you dont have to waste time reading people yap about shit. just get to the point with our app. oh and did i mention that it highlights the miss information. oh and did i mention that it also shows the sources/paragraphs it got the answer from. oh and did i mention.....jk.
 
 ## Todo
 
