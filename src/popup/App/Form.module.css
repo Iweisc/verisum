@@ -1,0 +1,218 @@
+.root {
+}
+
+.form {
+  display: flex;
+  background-color: #fafafa;
+  border-bottom: 1px solid #e5e7eb;
+  align-items: center;
+  padding: 0.75rem;
+  gap: 0.5rem;
+}
+
+.label {
+  width: 100%;
+  background-color: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.35rem 0.35rem 0.75rem;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+}
+
+.label:focus-within {
+  border-color: #9ca3af;
+  box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.1);
+}
+
+.textarea {
+  background-color: transparent;
+  border: none;
+  width: 100%;
+  padding: 0.25rem 0;
+  font-size: 0.9rem;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.textarea::placeholder {
+  color: #9ca3af;
+}
+
+.searchIcon {
+  opacity: 0.5;
+  margin: 0.45em;
+}
+
+.icon {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.submitButton {
+  padding: 0.4rem;
+  background-color: #1f2937;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  color: #fff;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.8rem;
+  height: 1.8rem;
+  flex-shrink: 0;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #111827;
+}
+
+.submitButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.label:focus-within {
+  border-color: #9ca3af;
+  box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.1);
+}
+
+.textarea {
+  background-color: transparent;
+  border: none;
+  width: 100%;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.textarea::placeholder {
+  color: #9ca3af;
+}
+
+.searchIcon {
+  opacity: 0.5;
+  margin: 0.45em;
+}
+
+.icon {
+  display: block;
+  font-size: 1rem;
+}
+
+.submitButton {
+  padding: 0.4rem;
+  background-color: #f3f4f6;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  color: #6b7280;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.submitButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.label {
+  width: 100%;
+  background-color: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  padding: 0.25rem;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.label:focus-within {
+  border-color: #9ca3af;
+  box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.1);
+}
+
+.textarea {
+  background-color: transparent;
+  border: none;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.textarea::placeholder {
+  color: #9ca3af;
+}
+
+.searchIcon {
+  opacity: 0.5;
+  margin: 0.45em;
+}
+
+.icon {
+  display: block;
+  font-size: 1.1rem;
+}
+
+.submitButton {
+  padding: 0.5rem;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  color: #6b7280;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.submitButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.buttonLoader {
+  font-size: 1.2em;
+
+  stroke-width: 0.2em !important;
+}

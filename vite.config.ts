@@ -1,0 +1,71 @@
+import { crx, defineManifest } from '@nico-martin/crxjs-vite-plugin';
+import preact from '@preact/preset-vite';
+import { defineConfig } from 'vite';
+
+import { version, title, description } from './package.json';
+
+const [major, minor, patch, label = '0'] = version
+  .replace(/[^\d.-]+/g, '')
+  .split(/[.-]/);
+
+const manifest = defineManifest(async (env) => ({
+  name: (env.mode === 'staging' ? '[INTERNAL] ' : '') + title,
+  description,
+  manifest_version: 3,
+  background: {
+    service_worker: 'src/serviceWorker/serviceWorker.ts',
+  },
+  content_scripts: [
+    {
+      matches: ['<all_urls>'],
+      js: ['src/contentScript/contentScript.ts'],
+    },
+  ],
+  permissions: ['activeTab', 'storage'],
+  content_security_policy: {
+    extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
+  },
+  commands: {
+    'toggle-spotlight': {
+      suggested_key: {
+        default: 'Alt+Space',
+        mac: 'Alt+Space',
+      },
+      description: 'Open Verisum search',
+    },
+  },
+  action: {
+    default_title: 'Verisum',
+    default_popup: 'src/popup.html',
+    default_icon: {
+      '16': 'src/icons/16x.png',
+      '32': 'src/icons/32x.png',
+      '48': 'src/icons/48x.png',
+      '128': 'src/icons/128x.png',
+    },
+  },
+  icons: {
+    '16': 'src/icons/16x.png',
+    '32': 'src/icons/32x.png',
+    '48': 'src/icons/48x.png',
+    '128': 'src/icons/128x.png',
+  },
+  version: `${major}.${minor}.${patch}.${label}`,
+  version_name: version,
+}));
+
+export default defineConfig((config) => {
+  console.log('CONFIG', config);
+  return {
+    plugins: [preact(), crx({ manifest })],
+    build: {
+      rollupOptions: {
+        output: {
+          entryFileNames: '[name].js',
+          chunkFileNames: '[name].js',
+          assetFileNames: '[name].[ext]',
+        },
+      },
+    },
+  };
+});

@@ -1,0 +1,14 @@
+.root {
+  background-color: #e1eae6;
+  border-top: 1px solid #a6b5ae;
+  padding: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
