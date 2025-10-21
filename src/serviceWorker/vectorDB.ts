@@ -5,7 +5,7 @@ import { VectorDBStats } from '../helpers/types';
 const db = new VectorDB<Part>();
 const cache = new Map<
   string,
-  { stats: VectorDBStats; initialized: number; entries: any[] }
+  { url: string; stats: VectorDBStats; initialized: number; entries: any[] }
 >();
 
 const queryCache = new Map<
@@ -26,15 +26,25 @@ export const initializeVectorDB = async (
   url: string,
   parts: Array<Part>
 ): Promise<VectorDBStats> => {
-  const contentHash = parts
-    .map((p) => p.content)
-    .join('')
-    .slice(0, 100);
+  const allContent = parts.map((p) => p.content).join('');
+  const contentHash = `${allContent.length}_${allContent.slice(0, 100)}_${allContent.slice(-50)}`;
   const cacheKey = getCacheKey(url, contentHash);
 
+  console.log('Initializing VectorDB for URL:', url);
+  console.log(
+    'Content length:',
+    allContent.length,
+    'Cache key:',
+    cacheKey.slice(0, 80)
+  );
+
   const cached = cache.get(cacheKey);
-  if (cached && Date.now() - cached.initialized < 3600000) {
-    console.log('Using cached VectorDB');
+  if (
+    cached &&
+    cached.url === url &&
+    Date.now() - cached.initialized < 3600000
+  ) {
+    console.log('Using in-memory cached VectorDB for URL:', url);
 
     if (!db.entries.length) {
       console.log('Loading model for in-memory cache...');
@@ -49,8 +59,8 @@ export const initializeVectorDB = async (
   const stored = await chrome.storage.local.get(cacheKey);
   if (stored[cacheKey]) {
     const data = stored[cacheKey];
-    if (Date.now() - data.initialized < 3600000) {
-      console.log('Using stored VectorDB');
+    if (data.url === url && Date.now() - data.initialized < 3600000) {
+      console.log('Using stored VectorDB for URL:', url);
       cache.set(cacheKey, data);
 
       db.clear();
@@ -62,6 +72,13 @@ export const initializeVectorDB = async (
       db.entries = data.entries;
 
       return data.stats;
+    } else {
+      console.log(
+        'Cache invalid: URL mismatch or expired. Expected:',
+        url,
+        'Got:',
+        data.url
+      );
     }
   }
 
@@ -86,6 +103,7 @@ export const initializeVectorDB = async (
   };
 
   const cacheData = {
+    url,
     stats,
     initialized: Date.now(),
     entries: db.entries,
@@ -129,20 +147,9 @@ export const queryVectorDB = async (
     }))
     .filter((source) => Boolean(source.content));
 
-  const sections = [
-    ...new Set(results.map((result) => result[0].metadata.sectionId)),
-  ];
-
-  const dbEntries = sections.map((section) =>
-    db.entries.filter((entry) => entry.metadata.sectionId === section)
-  );
-
-  const documentParts: Array<string> = dbEntries.map((entries) =>
-    entries
-      .filter((entry) => Boolean(entry.metadata.content))
-      .map((entry) => entry.metadata.content)
-      .join('\n')
-  );
+  const documentParts: Array<string> = results
+    .map((result) => result[0].metadata.content)
+    .filter((content) => Boolean(content));
 
   queryCache.set(queryCacheKey, {
     sources,

@@ -130,3 +130,30 @@
   max-height: 400px;
   overflow-y: auto;
 }
+
+.answer strong {
+  font-weight: 600;
+  color: #111827;
+}
+
+.answer em {
+  font-style: italic;
+}
+
+.answer code {
+  background-color: #f3f4f6;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #dc2626;
+}
+
+.answer a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.answer a:hover {
+  color: #1d4ed8;
+}

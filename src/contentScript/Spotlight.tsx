@@ -11,6 +11,22 @@ interface SpotlightProps {
   ) => Promise<{ answer: string; sources: any[] }>;
 }
 
+const parseMarkdown = (text: string): string => {
+  let html = text;
+
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+  html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+  html = html.replace(
+    /\[(.+?)\]\((.+?)\)/g,
+    '<a href="$2" target="_blank" rel="noopener">$1</a>'
+  );
+  html = html.replace(/\n/g, '<br>');
+
+  return html;
+};
+
 const Spotlight = ({ onClose, onSubmit }: SpotlightProps) => {
   const [query, setQuery] = useState('');
   const [answer, setAnswer] = useState('');
@@ -81,9 +97,10 @@ const Spotlight = ({ onClose, onSubmit }: SpotlightProps) => {
         )}
 
         {answer && (
-          <div className={styles.answer}>
-            <p>{answer}</p>
-          </div>
+          <div
+            className={styles.answer}
+            dangerouslySetInnerHTML={{ __html: parseMarkdown(answer) }}
+          />
         )}
       </div>
     </div>
