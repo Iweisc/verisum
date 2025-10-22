@@ -6,6 +6,8 @@ import { VectorDBStats } from '../helpers/types';
 import { runLanguageModelStreamInServiceWorker } from '../helpers/chromeMessages';
 
 const CACHE_KEY = 'verisum_last_query';
+const HISTORY_KEY = 'verisum_query_history';
+const MAX_HISTORY = 10;
 
 const App = ({
   stats,
@@ -19,14 +21,20 @@ const App = ({
     Array<{ content: string; id: string }>
   >([]);
   const [lastQuery, setLastQuery] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [queryHistory, setQueryHistory] = useState<string[]>([]);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
 
   useEffect(() => {
-    chrome.storage.local.get(CACHE_KEY, (result) => {
+    chrome.storage.local.get([CACHE_KEY, HISTORY_KEY], (result) => {
       if (result[CACHE_KEY]) {
         const { query, answer, sources } = result[CACHE_KEY];
         setLastQuery(query || '');
         setAnswer(answer || '');
         setSources(sources || []);
+      }
+      if (result[HISTORY_KEY]) {
+        setQueryHistory(result[HISTORY_KEY]);
       }
     });
   }, []);
@@ -34,25 +42,54 @@ const App = ({
   const onSubmit = async (query: string) => {
     setAnswer('');
     setSources([]);
-    const done = await runLanguageModelStreamInServiceWorker(
-      query,
-      documentTitle,
-      (resp) => {
-        setAnswer(resp.answer);
-        setSources(resp.sources);
-      }
-    );
-    setAnswer(done.answer);
-    setSources(done.sources);
+    setError('');
+    setIsStreaming(true);
 
-    chrome.storage.local.set({
-      [CACHE_KEY]: {
+    try {
+      const done = await runLanguageModelStreamInServiceWorker(
         query,
-        answer: done.answer,
-        sources: done.sources,
-        timestamp: Date.now(),
-      },
-    });
+        documentTitle,
+        (resp) => {
+          setAnswer(resp.answer);
+          setSources(resp.sources);
+        }
+      );
+      setIsStreaming(false);
+      setAnswer(done.answer);
+      setSources(done.sources);
+
+      const updatedHistory = [
+        query,
+        ...queryHistory.filter((q) => q !== query),
+      ].slice(0, MAX_HISTORY);
+      setQueryHistory(updatedHistory);
+
+      chrome.storage.local.set({
+        [CACHE_KEY]: {
+          query,
+          answer: done.answer,
+          sources: done.sources,
+          timestamp: Date.now(),
+        },
+        [HISTORY_KEY]: updatedHistory,
+      });
+    } catch (err: any) {
+      setIsStreaming(false);
+      const errorMessage = err?.message || '';
+      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        setError('Network error. Check your connection and try again.');
+      } else if (errorMessage.includes('rate limit')) {
+        setError('Rate limit reached. Please wait a moment and try again.');
+      } else if (errorMessage.includes('model')) {
+        setError('AI model error. The service may be temporarily unavailable.');
+      } else if (errorMessage.includes('VectorDB')) {
+        setError(
+          'Failed to analyze page content. Please refresh and try again.'
+        );
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
+    }
   };
 
   return (
@@ -61,9 +98,32 @@ const App = ({
         className={styles.form}
         onSubmit={onSubmit}
         defaultQuery={lastQuery}
+        queryHistory={queryHistory}
       />
-      {answer && (
-        <Result className={styles.result} answer={answer} sources={sources} />
+      {error && (
+        <div className={styles.error}>
+          <p className={styles.errorMessage}>{error}</p>
+          <button
+            onClick={() => {
+              setError('');
+              const textarea = document.querySelector('textarea');
+              if (textarea?.value) {
+                onSubmit(textarea.value);
+              }
+            }}
+            className={styles.retryButton}
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+      {answer && !error && (
+        <Result
+          className={styles.result}
+          answer={answer}
+          sources={sources}
+          isStreaming={isStreaming}
+        />
       )}
     </div>
   );

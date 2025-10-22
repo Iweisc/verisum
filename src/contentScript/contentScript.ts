@@ -7,6 +7,15 @@ import { runLanguageModelStreamInServiceWorker } from '../helpers/chromeMessages
 
 let spotlightOpen = false;
 const SPOTLIGHT_ID = 'verisum-spotlight';
+let spotlightState: {
+  query: string;
+  answer: string;
+  sources: Array<{ content: string; id: string }>;
+} = {
+  query: '',
+  answer: '',
+  sources: [],
+};
 
 const toggleSpotlight = () => {
   if (spotlightOpen) {
@@ -58,6 +67,10 @@ const openSpotlight = async () => {
     createElement(Spotlight, {
       onClose: closeSpotlight,
       onSubmit: handleSubmit,
+      initialState: spotlightState,
+      onStateChange: (state) => {
+        spotlightState = state;
+      },
     }),
     container
   );

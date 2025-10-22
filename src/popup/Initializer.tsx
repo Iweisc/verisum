@@ -21,23 +21,48 @@ const Initializer = ({
   className?: string;
 }) => {
   const [error, setError] = useState<string>('');
-  const [loadingMessage, setLoadingMessage] =
-    useState<string>('Initializing...');
+  const [loadingMessage, setLoadingMessage] = useState<string>(
+    'Extracting page content...'
+  );
+  const [progress, setProgress] = useState<number>(0);
 
   const initialize = async () => {
     try {
-      const timeoutId = setTimeout(() => {
+      setProgress(10);
+      setLoadingMessage('Extracting page content...');
+
+      const timeout1 = setTimeout(() => {
+        setProgress(30);
+        setLoadingMessage('Processing content...');
+      }, 1000);
+
+      const timeout2 = setTimeout(() => {
+        setProgress(50);
         setLoadingMessage(
-          'Downloading model... (this may take a minute on first run)'
+          'Downloading AI model... (first run may take a minute)'
         );
       }, 3000);
+
+      const timeout3 = setTimeout(() => {
+        setProgress(70);
+        setLoadingMessage('Generating embeddings...');
+      }, 5000);
 
       const [vectorDB, availability] = await Promise.all([
         getInitializeVectorDBFromContent(),
         getLanguageModelAvailabilityInServiceWorker(),
       ]);
 
-      clearTimeout(timeoutId);
+      clearTimeout(timeout1);
+      clearTimeout(timeout2);
+      clearTimeout(timeout3);
+
+      setProgress(90);
+      setLoadingMessage('Almost ready...');
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      setProgress(100);
       setStats(vectorDB.dbStats);
       setDocumentTitle(vectorDB.documentTitle);
       setInitialized();
@@ -63,6 +88,15 @@ const Initializer = ({
       ) : (
         <div style={{ textAlign: 'center' }}>
           <Loader className={styles.loader} />
+          <div className={styles.progressContainer}>
+            <div className={styles.progressBar}>
+              <div
+                className={styles.progressFill}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className={styles.progressText}>{progress}%</p>
+          </div>
           <p style={{ marginTop: '1rem', fontSize: '0.875rem', opacity: 0.7 }}>
             {loadingMessage}
           </p>

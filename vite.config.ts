@@ -33,6 +33,12 @@ const manifest = defineManifest(async (env) => ({
       },
       description: 'Open Verisum search',
     },
+    _execute_action: {
+      suggested_key: {
+        default: 'Ctrl+Shift+V',
+        mac: 'Command+Shift+V',
+      },
+    },
   },
   action: {
     default_title: 'Verisum',

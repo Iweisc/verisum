@@ -54,3 +54,44 @@
   left: 0;
   width: 100%;
 }
+
+.error {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  animation: fadeIn 0.2s ease-in;
+}
+
+.errorMessage {
+  color: #dc2626;
+  font-size: 0.95rem;
+  text-align: center;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.retryButton {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.retryButton:hover {
+  background: #b91c1c;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

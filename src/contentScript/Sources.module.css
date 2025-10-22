@@ -2,6 +2,18 @@
   padding: 0.75rem;
 }
 
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.count {
+  font-size: 0.85em;
+  color: #4a9eba;
+  font-weight: normal;
+}
+
 .list {
   margin: 0.75rem 0 !important;
   list-style: none;
@@ -35,6 +47,20 @@
     .buttonIcon {
       opacity: 1;
     }
+  }
+
+  &:focus {
+    outline: 2px solid #4a9eba;
+    outline-offset: 2px;
+    opacity: 1;
+  }
+}
+
+.buttonFocused {
+  opacity: 1 !important;
+
+  .buttonIcon {
+    opacity: 1 !important;
   }
 }
 
