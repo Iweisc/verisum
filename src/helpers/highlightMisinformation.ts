@@ -49,10 +49,7 @@ export const highlightMisinformation = (
   element.style.cursor = 'help';
   element.setAttribute(HIGHLIGHT_ATTR, 'true');
   element.setAttribute(HIGHLIGHT_ID_ATTR, flagId);
-  element.setAttribute(
-    'title',
-    `Flagged: ${reason}\nConfidence: ${confidence}%\nVerdict: ${verdict}`
-  );
+  element.setAttribute('title', reason);
 
   element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };

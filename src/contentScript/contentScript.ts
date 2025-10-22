@@ -35,6 +35,8 @@ let selectedTextData: {
 
 const restoreFlagsForCurrentPage = async () => {
   try {
+    clearAllHighlights();
+
     const main =
       document.querySelector('main') || document.querySelector('body');
     if (!main) return;
@@ -62,6 +64,16 @@ const restoreFlagsForCurrentPage = async () => {
   }
 };
 
+let currentUrl = window.location.href;
+
+const handleUrlChange = () => {
+  if (window.location.href !== currentUrl) {
+    currentUrl = window.location.href;
+    clearAllHighlights();
+    setTimeout(restoreFlagsForCurrentPage, 1000);
+  }
+};
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     setTimeout(restoreFlagsForCurrentPage, 500);
@@ -69,6 +81,28 @@ if (document.readyState === 'loading') {
 } else {
   setTimeout(restoreFlagsForCurrentPage, 500);
 }
+
+window.addEventListener('popstate', handleUrlChange);
+window.addEventListener('hashchange', handleUrlChange);
+
+let urlCheckInterval = setInterval(() => {
+  if (window.location.href !== currentUrl) {
+    handleUrlChange();
+  }
+}, 500);
+
+const originalPushState = history.pushState;
+const originalReplaceState = history.replaceState;
+
+history.pushState = function (...args) {
+  originalPushState.apply(this, args);
+  handleUrlChange();
+};
+
+history.replaceState = function (...args) {
+  originalReplaceState.apply(this, args);
+  handleUrlChange();
+};
 
 const toggleSpotlight = () => {
   if (spotlightOpen) {

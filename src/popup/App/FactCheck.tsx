@@ -9,9 +9,22 @@ const FactCheck = () => {
 
   const loadFlags = async () => {
     try {
-      const response = await chrome.runtime.sendMessage({
-        action: 'getAllFactCheckFlags',
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
       });
+
+      if (!tab.url) {
+        setFlags([]);
+        setLoading(false);
+        return;
+      }
+
+      const response = await chrome.runtime.sendMessage({
+        action: 'getFlagsForUrl',
+        payload: { url: tab.url },
+      });
+
       if (response && response.flags) {
         setFlags(response.flags);
       } else {
