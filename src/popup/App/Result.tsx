@@ -2,8 +2,13 @@ import showdown from 'showdown';
 import styles from './Result.module.css';
 import cn from '../../helpers/classnames';
 import { highlightParagraphFromContent } from '../../helpers/chromeMessages';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Volume2, VolumeX } from 'lucide-react';
 import { useState, useEffect, useRef } from 'preact/hooks';
+import {
+  generateSpeech,
+  isConfigured as isTTSConfigured,
+} from '../../helpers/vpsTTS';
+import { AudioPlayer } from '../../helpers/AudioPlayer';
 
 const showdownConverter = new showdown.Converter();
 const Result = ({
@@ -20,7 +25,9 @@ const Result = ({
   const [copied, setCopied] = useState(false);
   const [copiedWithSources, setCopiedWithSources] = useState(false);
   const [focusedSourceIndex, setFocusedSourceIndex] = useState<number>(-1);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const sourceRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const audioPlayerRef = useRef<AudioPlayer | null>(null);
 
   const handleCopy = async () => {
     try {
@@ -40,6 +47,31 @@ const Result = ({
       setTimeout(() => setCopiedWithSources(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleSpeak = async () => {
+    if (isSpeaking) {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.stop();
+      }
+      setIsSpeaking(false);
+      return;
+    }
+
+    try {
+      setIsSpeaking(true);
+
+      if (!audioPlayerRef.current) {
+        audioPlayerRef.current = new AudioPlayer();
+      }
+
+      const audioData = await generateSpeech(answer.replace(/\[(\d+)\]/g, ''));
+      await audioPlayerRef.current.play(audioData);
+      setIsSpeaking(false);
+    } catch (err) {
+      console.error('Failed to speak:', err);
+      setIsSpeaking(false);
     }
   };
 
@@ -83,6 +115,16 @@ const Result = ({
             <span className={styles.qualityLow}>Limited sources</span>
           )}
         </div>
+        {isTTSConfigured() && (
+          <button
+            onClick={handleSpeak}
+            className={styles.copyButton}
+            title={isSpeaking ? 'Stop speaking' : 'Speak answer'}
+          >
+            {isSpeaking ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            <span>{isSpeaking ? 'Stop' : 'Speak'}</span>
+          </button>
+        )}
         <button
           onClick={handleCopy}
           className={styles.copyButton}

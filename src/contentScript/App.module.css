@@ -44,6 +44,12 @@
   }
 }
 
+.controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
 .button {
   background-color: #fff;
   border: 1px solid #535353;
@@ -65,6 +71,39 @@
   }
 }
 
+.toggleButton {
+  background-color: #fff;
+  border: 1px solid #535353;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  transition: all 150ms ease-in-out;
+
+  &:hover {
+    background-color: #f5f5f5;
+    border: 1px solid #333;
+    color: #000;
+  }
+
+  &.toggleButtonActive {
+    background-color: #4caf50;
+    border: 1px solid #45a049;
+    color: #fff;
+
+    &:hover {
+      background-color: #45a049;
+      border: 1px solid #3d8b40;
+    }
+  }
+}
+
 .meta {
   background-color: #fff;
   border: 1px solid #535353;
@@ -79,4 +118,25 @@
 
 .metaVisible {
   transform: translateY(calc(110% * -1)) translateX(0);
+}
+
+.overlay {
+  position: fixed;
+  bottom: 40px;
+  left: 40px;
+  background-color: #fff;
+  border: 1px solid #535353;
+  border-radius: 0.75rem;
+  box-shadow: 0 0 2rem rgba(0, 0, 0, 0.25);
+  max-width: 400px;
+  max-height: 60vh;
+  overflow-y: auto;
+  z-index: 9998;
+  transform: translateX(-120%);
+  transition: transform 250ms ease-in-out;
+  padding: 16px;
+
+  &.overlayVisible {
+    transform: translateX(0);
+  }
 }

@@ -179,7 +179,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 chrome.runtime.onConnect.addListener((port) => {
-  port.onMessage.addListener((request) => {
+  port.onMessage.addListener(async (request) => {
     if (request.action === 'runLanguageModelStream') {
       const { query, documentTitle } = request.payload;
       runLanguageModel(query, documentTitle, (response) => {
@@ -193,6 +193,60 @@ chrome.runtime.onConnect.addListener((port) => {
           port.postMessage({ error: error.message, done: true });
           port.disconnect();
         });
+    } else if (request.action === 'generateTTS') {
+      const { text, voice, speed } = request.payload;
+
+      try {
+        const TTS_API_URL = import.meta.env.VITE_TTS_API_URL;
+        const TTS_API_KEY = import.meta.env.VITE_TTS_API_KEY;
+
+        if (!TTS_API_URL || !TTS_API_KEY) {
+          port.postMessage({
+            action: 'tts-error',
+            error: 'TTS API not configured',
+            messageId: request.messageId,
+          });
+          return;
+        }
+
+        const response = await fetch(`${TTS_API_URL}/api/tts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': TTS_API_KEY,
+          },
+          body: JSON.stringify({
+            text,
+            voice: voice || 'default',
+            speed: speed || 1.0,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          port.postMessage({
+            action: 'tts-error',
+            error: `TTS API error: ${response.status}`,
+            messageId: request.messageId,
+          });
+          return;
+        }
+
+        const audioData = await response.arrayBuffer();
+
+        port.postMessage({
+          action: 'tts-audio',
+          audioData,
+          messageId: request.messageId,
+          done: true,
+        });
+      } catch (error: any) {
+        port.postMessage({
+          action: 'tts-error',
+          error: error?.message || 'Unknown TTS error',
+          messageId: request.messageId,
+        });
+      }
     }
   });
 });

@@ -345,3 +345,83 @@
     opacity: 1;
   }
 }
+
+.micButton {
+  padding: 0.5rem;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  color: #6b7280;
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+}
+
+.micButton:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.micButton:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.micButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.micButtonActive {
+  background-color: #ef4444 !important;
+  color: #fff !important;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.voiceModeButton {
+  padding: 0.5rem;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  color: #6b7280;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+}
+
+.voiceModeButton:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.voiceModeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voiceModeActive {
+  background-color: #10b981 !important;
+  color: #fff !important;
+}

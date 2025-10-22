@@ -1,5 +1,6 @@
 class SpeechToText {
-  private recognition: SpeechRecognition;
+  private recognition: SpeechRecognition | null = null;
+  private isListening: boolean = false;
 
   public start = () => {
     if (this.recognition) {
@@ -9,20 +10,62 @@ class SpeechToText {
     this.recognition.lang = 'en-US';
     this.recognition.interimResults = false;
     this.recognition.maxAlternatives = 5;
+    this.recognition.continuous = false;
+
+    this.recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      this.isListening = false;
+    };
+
+    this.recognition.onend = () => {
+      this.isListening = false;
+    };
+
+    this.isListening = true;
     this.recognition.start();
   };
 
-  public stop = () =>
-    new Promise<string>((resolve) => {
+  public stop = (): Promise<string> =>
+    new Promise<string>((resolve, reject) => {
       if (!this.recognition) {
-        throw new Error('Not started');
+        reject(new Error('Not started'));
+        return;
       }
-      this.recognition.onresult = (event) => {
-        resolve(event.results[0][0].transcript);
+
+      const currentRecognition = this.recognition;
+
+      currentRecognition.onresult = (event) => {
+        const transcript = event.results[0]?.[0]?.transcript || '';
+        resolve(transcript);
       };
-      this.recognition.stop();
+
+      currentRecognition.onerror = (event) => {
+        reject(new Error(`Recognition error: ${event.error}`));
+      };
+
+      try {
+        currentRecognition.stop();
+      } catch (e) {
+        reject(e);
+      }
+
       this.recognition = null;
+      this.isListening = false;
     });
+
+  public isActive = (): boolean => {
+    return this.isListening;
+  };
+
+  public abort = () => {
+    if (this.recognition) {
+      try {
+        this.recognition.abort();
+      } catch (e) {}
+      this.recognition = null;
+      this.isListening = false;
+    }
+  };
 }
 
 export default SpeechToText;
