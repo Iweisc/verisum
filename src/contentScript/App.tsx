@@ -54,12 +54,9 @@ const App = () => {
       }
 
       setState(State.IDLE);
-
-      if (conversationalLoopRef.current && conversationalMode) {
-        setTimeout(() => startListening(), 500);
-      }
     } catch (e) {
       setState(State.IDLE);
+    } finally {
       if (conversationalLoopRef.current && conversationalMode) {
         setTimeout(() => startListening(), 500);
       }
@@ -92,14 +89,16 @@ const App = () => {
         await processQuery(text);
       } else {
         setState(State.IDLE);
-        if (conversationalLoopRef.current && conversationalMode) {
-          setTimeout(() => startListening(), 500);
-        }
       }
     } catch (e) {
       speechToTextRef.current = null;
       setState(State.IDLE);
-      if (conversationalLoopRef.current && conversationalMode) {
+    } finally {
+      if (
+        !speechToTextRef.current &&
+        conversationalLoopRef.current &&
+        conversationalMode
+      ) {
         setTimeout(() => startListening(), 500);
       }
     }

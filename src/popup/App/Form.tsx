@@ -64,11 +64,13 @@ const Form = ({
   };
 
   return (
-    <div className={cn(className, styles.root)}>
+    <div className={cn(className || '', styles.root)}>
       <form
         className={styles.form}
         onSubmit={async (e) => {
           e.preventDefault();
+          if (!textRef.current) return;
+
           setLoading(true);
           setLoadingStage('Searching page...');
           setShowSuggestions(false);

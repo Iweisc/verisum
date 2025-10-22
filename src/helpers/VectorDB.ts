@@ -10,9 +10,18 @@ export interface VectorizedEntry<T> extends Entry<T> {
   vectorMagnitude: number;
 }
 
+const DEFAULTS = {
+  CHUNK_SIZE: 50,
+  SEARCH_RESULTS: 5,
+  SIMILARITY_THRESHOLD: 0.6,
+  MODEL_NAME: 'Xenova/all-MiniLM-L6-v2',
+  MODEL_DEVICE: 'wasm',
+  MODEL_DTYPE: 'q8',
+} as const;
+
 class VectorDB<T = {}> {
   public entries: Array<VectorizedEntry<T>> = [];
-  private extractor: FeatureExtractionPipeline = null;
+  private extractor: FeatureExtractionPipeline | null = null;
 
   public async setModel(): Promise<void> {
     if (!this.extractor) {
@@ -21,39 +30,33 @@ class VectorDB<T = {}> {
   }
 
   private loadExtractor = async () => {
-    console.log('Loading embedding model...');
-    this.extractor = await pipeline(
-      'feature-extraction',
-      'Xenova/all-MiniLM-L6-v2',
-      {
-        device: 'wasm',
-        dtype: 'q8',
-      }
-    );
-    console.log('Model loaded successfully');
+    this.extractor = await pipeline('feature-extraction', DEFAULTS.MODEL_NAME, {
+      device: DEFAULTS.MODEL_DEVICE,
+      dtype: DEFAULTS.MODEL_DTYPE,
+    });
   };
 
   public async addEntries(
     entries: Array<Entry<T>>,
-    callback: (processed: number, total: number) => void = null
+    callback: ((processed: number, total: number) => void) | null = null
   ): Promise<Array<Entry<T>>> {
-    const chunkSize = 50;
+    if (!Array.isArray(entries) || entries.length === 0) {
+      throw new Error('Invalid entries array provided to addEntries');
+    }
+
+    const chunkSize = DEFAULTS.CHUNK_SIZE;
     const chunks = [];
     const numberOfChunks = Math.ceil(entries.length / chunkSize);
-    console.log(`adding ${entries.length} entries in ${numberOfChunks} chunks`);
     for (let i = 0; i < entries.length; i += chunkSize) {
-      console.log(
-        `Processing chunk ${Math.floor(i / chunkSize) + 1}/${numberOfChunks}`
-      );
       chunks.push(
         await this.embedTexts(
           entries.slice(i, i + chunkSize).map((entry) => entry.str)
         )
       );
-      callback && callback(i / chunkSize + 1, numberOfChunks);
-      console.log(`Chunk ${Math.floor(i / chunkSize) + 1} complete`);
+      if (callback) {
+        callback(i / chunkSize + 1, numberOfChunks);
+      }
     }
-    console.log('All chunks processed, building entries...');
     const embeddings = chunks.flat();
     entries.map((entry, i) => {
       this.entries.push({
@@ -63,15 +66,22 @@ class VectorDB<T = {}> {
         vectorMagnitude: this.calculateMagnitude(embeddings[i]),
       });
     });
-    console.log('Entries built successfully');
     return this.entries;
   }
 
   public async search(
     query: string,
-    numberOfResults: number = 5,
-    similarityThreshold: number = 0.6
+    numberOfResults: number = DEFAULTS.SEARCH_RESULTS,
+    similarityThreshold: number = DEFAULTS.SIMILARITY_THRESHOLD
   ): Promise<Array<[VectorizedEntry<T>, number]>> {
+    if (!query || typeof query !== 'string' || query.trim().length === 0) {
+      throw new Error('Invalid query provided to search');
+    }
+
+    if (this.entries.length === 0) {
+      throw new Error('No entries in VectorDB to search');
+    }
+
     const [queryEmbedding] = await this.embedTexts([query]);
     const queryMagnitude = this.calculateMagnitude(queryEmbedding);
     const scores = this.calculateSimilarityScores(
@@ -94,11 +104,12 @@ class VectorDB<T = {}> {
     texts: Array<string>
   ): Promise<Array<Array<number>>> {
     try {
-      console.log(`Embedding ${texts.length} texts...`);
-
       if (!this.extractor || typeof this.extractor !== 'function') {
-        console.error('Extractor not loaded, loading now...');
         await this.loadExtractor();
+      }
+
+      if (!this.extractor) {
+        throw new Error('Failed to load extractor model');
       }
 
       const output = await this.extractor(texts, {
@@ -106,10 +117,8 @@ class VectorDB<T = {}> {
         normalize: true,
       });
       const result = output.tolist();
-      console.log(`Embedded ${texts.length} texts successfully`);
       return result;
     } catch (error) {
-      console.error('Error embedding texts:', error);
       throw error;
     }
   }
@@ -127,22 +136,26 @@ class VectorDB<T = {}> {
     queryVector: number[],
     queryMagnitude: number
   ): Array<[VectorizedEntry<T>, number]> {
-    return entries.map((entry) => {
-      let dotProduct = 0;
-      if (!entry.vector) {
-        return null;
-      }
-      for (let i = 0; i < entry.vector.length; i++) {
-        dotProduct += entry.vector[i] * queryVector[i];
-      }
-      let score = this.getCosineSimilarityScore(
-        dotProduct,
-        entry.vectorMagnitude!,
-        queryMagnitude
+    return entries
+      .map((entry) => {
+        let dotProduct = 0;
+        if (!entry.vector || !entry.vectorMagnitude) {
+          return null;
+        }
+        for (let i = 0; i < entry.vector.length; i++) {
+          dotProduct += entry.vector[i] * queryVector[i];
+        }
+        let score = this.getCosineSimilarityScore(
+          dotProduct,
+          entry.vectorMagnitude,
+          queryMagnitude
+        );
+        score = this.normalizeScore(score);
+        return [entry, score] as [VectorizedEntry<T>, number];
+      })
+      .filter(
+        (result): result is [VectorizedEntry<T>, number] => result !== null
       );
-      score = this.normalizeScore(score); // Normalize the score
-      return [entry, score];
-    });
   }
 
   private getCosineSimilarityScore(

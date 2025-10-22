@@ -11,6 +11,11 @@ const sendMessageToContent = <T = {}>(
         if (tabs[0]) {
           const tabId = tabs[0].id;
 
+          if (!tabId) {
+            reject(new Error('No tab ID found'));
+            return;
+          }
+
           chrome.tabs.sendMessage(tabId, { action, payload }, (response) => {
             if (chrome.runtime.lastError) {
               if (retries < 5) {
@@ -110,7 +115,7 @@ export const getQueryResponseFromContent = async (
   });
 
   return {
-    dbStats: null,
+    dbStats: { parsedCharacters: 0, entries: 0, sections: 0 },
     dbResponse,
     documentTitle: '',
   };
@@ -215,14 +220,15 @@ export const runLanguageModelStreamInServiceWorker = (
             return;
           }
 
-          callback &&
+          if (callback && resp.answer && resp.sources && resp.prompt) {
             callback({
               answer: resp.answer,
               sources: resp.sources,
               prompt: resp.prompt,
             });
+          }
 
-          if (resp.done) {
+          if (resp.done && resp.answer && resp.sources && resp.prompt) {
             resolve({
               answer: resp.answer,
               sources: resp.sources,

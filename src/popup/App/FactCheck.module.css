@@ -1,0 +1,86 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.empty {
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.scanButton {
+  width: 100%;
+  padding: 0.75rem;
+  background: #fafafa;
+  border: none;
+  border-bottom: 1px solid #e5e7eb;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #374151;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.scanButton:hover {
+  background: #f3f4f6;
+}
+
+.actions {
+  display: flex;
+  background: #fafafa;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.actionButton {
+  flex: 1;
+  padding: 0.75rem;
+  background: transparent;
+  border: none;
+  border-right: 1px solid #e5e7eb;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #374151;
+  transition: background 0.2s;
+}
+
+.actionButton:last-child {
+  border-right: none;
+}
+
+.actionButton:hover {
+  background: #f3f4f6;
+}
+
+.list {
+  overflow-y: auto;
+}
+
+.claim {
+  width: 100%;
+  padding: 0.75rem;
+  background: white;
+  border: none;
+  border-bottom: 1px solid #e5e7eb;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.claim:hover {
+  background: #fafafa;
+}
+
+.claimText {
+  font-size: 0.85rem;
+  color: #111827;
+  line-height: 1.4;
+  margin-bottom: 0.35rem;
+}
+
+.claimReason {
+  font-size: 0.75rem;
+  color: #6b7280;
+}

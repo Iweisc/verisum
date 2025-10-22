@@ -9,7 +9,7 @@ import { VectorDBStats } from '../helpers/types';
 
 const Popup = () => {
   const [initialized, setInitialized] = useState<boolean>(false);
-  const [stats, setStats] = useState<VectorDBStats>(null);
+  const [stats, setStats] = useState<VectorDBStats | null>(null);
   const [documentTitle, setDocumentTitle] = useState<string>('');
 
   return (
@@ -28,4 +28,7 @@ const Popup = () => {
   );
 };
 
-render(<Popup />, document.querySelector('#amw-popup-container'));
+const container = document.querySelector('#amw-popup-container');
+if (container) {
+  render(<Popup />, container);
+}

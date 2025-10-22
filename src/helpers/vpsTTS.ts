@@ -12,6 +12,10 @@ export const generateSpeech = async (
   text: string,
   options: TTSOptions = {}
 ): Promise<ArrayBuffer> => {
+  if (!text || typeof text !== 'string' || text.trim().length === 0) {
+    throw new Error('Invalid text input for TTS');
+  }
+
   if (!TTS_API_URL || !TTS_API_KEY) {
     throw new Error('TTS API not configured. Check .env file.');
   }

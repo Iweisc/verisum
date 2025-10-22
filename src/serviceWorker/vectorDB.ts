@@ -17,7 +17,13 @@ const queryCache = new Map<
   }
 >();
 
-const QUERY_CACHE_TTL = 1800000;
+const CACHE_CONFIG = {
+  QUERY_TTL: 1800000,
+  DB_TTL: 3600000,
+  MAX_STORAGE_SIZE: 5000000,
+  SEARCH_RESULTS: 7,
+  MIN_SIMILARITY: 0.5,
+} as const;
 
 const getCacheKey = (url: string, contentHash: string) =>
   `${url}:${contentHash}`;
@@ -26,31 +32,29 @@ export const initializeVectorDB = async (
   url: string,
   parts: Array<Part>
 ): Promise<VectorDBStats> => {
+  if (!url || typeof url !== 'string') {
+    throw new Error('Invalid URL provided to initializeVectorDB');
+  }
+
+  if (!Array.isArray(parts) || parts.length === 0) {
+    throw new Error(
+      'Invalid or empty parts array provided to initializeVectorDB'
+    );
+  }
+
   const allContent = parts.map((p) => p.content).join('');
   const contentHash = `${allContent.length}_${allContent.slice(0, 100)}_${allContent.slice(-50)}`;
   const cacheKey = getCacheKey(url, contentHash);
-
-  console.log('Initializing VectorDB for URL:', url);
-  console.log(
-    'Content length:',
-    allContent.length,
-    'Cache key:',
-    cacheKey.slice(0, 80)
-  );
 
   const cached = cache.get(cacheKey);
   if (
     cached &&
     cached.url === url &&
-    Date.now() - cached.initialized < 3600000
+    Date.now() - cached.initialized < CACHE_CONFIG.DB_TTL
   ) {
-    console.log('Using in-memory cached VectorDB for URL:', url);
-
     if (!db.entries.length) {
-      console.log('Loading model for in-memory cache...');
       await db.setModel();
       db.entries = cached.entries;
-      console.log('Model loaded for in-memory cache');
     }
 
     return cached.stats;
@@ -59,42 +63,29 @@ export const initializeVectorDB = async (
   const stored = await chrome.storage.local.get(cacheKey);
   if (stored[cacheKey]) {
     const data = stored[cacheKey];
-    if (data.url === url && Date.now() - data.initialized < 3600000) {
-      console.log('Using stored VectorDB for URL:', url);
+    if (
+      data.url === url &&
+      Date.now() - data.initialized < CACHE_CONFIG.DB_TTL
+    ) {
       cache.set(cacheKey, data);
 
       db.clear();
 
-      console.log('Loading model for cached VectorDB...');
       await db.setModel();
-      console.log('Model loaded for cached VectorDB');
 
       db.entries = data.entries;
 
       return data.stats;
-    } else {
-      console.log(
-        'Cache invalid: URL mismatch or expired. Expected:',
-        url,
-        'Got:',
-        data.url
-      );
     }
   }
 
-  console.log('Initializing fresh VectorDB');
-  console.log(`Found ${parts.length} parts, filtering paragraphs...`);
   db.clear();
   const onlyParagraphs = parts.filter((part) => part.tagName === 'p');
-  console.log(`Processing ${onlyParagraphs.length} paragraphs`);
 
-  console.log('Loading model...');
   await db.setModel();
-  console.log('Generating embeddings...');
   await db.addEntries(
     onlyParagraphs.map((part) => ({ str: part.content, metadata: part }))
   );
-  console.log('VectorDB initialization complete');
 
   const stats: VectorDBStats = {
     parsedCharacters: parts.reduce((acc, curr) => acc + curr.content.length, 0),
@@ -111,7 +102,7 @@ export const initializeVectorDB = async (
 
   cache.set(cacheKey, cacheData);
 
-  if (JSON.stringify(cacheData).length < 5000000) {
+  if (JSON.stringify(cacheData).length < CACHE_CONFIG.MAX_STORAGE_SIZE) {
     await chrome.storage.local.set({ [cacheKey]: cacheData });
   }
 
@@ -124,6 +115,10 @@ export const queryVectorDB = async (
   sources: Array<{ content: string; id: string }>;
   documentParts: Array<string>;
 }> => {
+  if (!query || typeof query !== 'string' || query.trim().length === 0) {
+    throw new Error('Invalid query provided to queryVectorDB');
+  }
+
   if (!db.entries.length) {
     throw new Error('VectorDB not initialized. Please refresh the page.');
   }
@@ -131,14 +126,17 @@ export const queryVectorDB = async (
   const queryCacheKey = query.toLowerCase().trim();
   const cached = queryCache.get(queryCacheKey);
 
-  if (cached && Date.now() - cached.timestamp < QUERY_CACHE_TTL) {
-    console.log('Using cached query result');
+  if (cached && Date.now() - cached.timestamp < CACHE_CONFIG.QUERY_TTL) {
     return { sources: cached.sources, documentParts: cached.documentParts };
   }
 
   await db.setModel();
 
-  const results = await db.search(query, 7, 0.5);
+  const results = await db.search(
+    query,
+    CACHE_CONFIG.SEARCH_RESULTS,
+    CACHE_CONFIG.MIN_SIMILARITY
+  );
 
   const sources = results
     .map((result) => ({

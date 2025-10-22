@@ -104,7 +104,7 @@ const Result = ({
   }, [focusedSourceIndex]);
 
   return (
-    <div className={cn(styles.root, className)}>
+    <div className={cn(styles.root, className || '')}>
       <div className={styles.answerHeader}>
         <div className={styles.qualityBadge}>
           {sources.length >= 5 ? (

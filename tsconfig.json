@@ -14,10 +14,10 @@
     "noUnusedParameters": false,
     "noImplicitReturns": true,
     "skipLibCheck": true,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
-    "noImplicitAny": false
+    "noImplicitAny": true
   },
   "include": ["src"]
 }
