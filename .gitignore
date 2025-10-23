@@ -15,3 +15,6 @@ dist-firefox/
 
 # OS
 .DS_Store
+
+# Agent guidelines
+AGENTS.md
