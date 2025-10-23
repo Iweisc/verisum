@@ -329,7 +329,19 @@ Be thorough and flag EVERYTHING suspicious, even if it seems absurd.`;
           }),
         });
 
+        if (!llmResponse.ok) {
+          const errorText = await llmResponse.text();
+          throw new Error(
+            `LLM API error: ${llmResponse.status} - ${errorText}`
+          );
+        }
+
         const llmData = await llmResponse.json();
+
+        if (!llmData.choices || !llmData.choices[0]) {
+          throw new Error('Invalid response from LLM API');
+        }
+
         const llmText = llmData.choices[0]?.message?.content || '';
 
         let flaggedClaims: any[] = [];
