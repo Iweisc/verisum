@@ -1,4 +1,3 @@
-import { h } from 'preact';
 import { useState } from 'preact/hooks';
 import { AlertTriangle, X } from 'lucide-react';
 import styles from './FlagMenu.module.css';
@@ -28,13 +27,12 @@ const FlagMenu = ({
     'Other',
   ];
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const reason = selectedReason === 'Other' ? customReason : selectedReason;
     if (!reason.trim()) return;
 
     setIsSubmitting(true);
-    await onSubmit(reason);
-    setIsSubmitting(false);
+    Promise.resolve(onSubmit(reason)).finally(() => setIsSubmitting(false));
   };
 
   return (
@@ -50,7 +48,11 @@ const FlagMenu = ({
         <div className={styles.header}>
           <AlertTriangle size={18} />
           <h3>Flag Potential Misinformation</h3>
-          <button className={styles.closeButton} onClick={onClose}>
+          <button
+            className={styles.closeButton}
+            onClick={onClose}
+            aria-label="Close menu"
+          >
             <X size={18} />
           </button>
         </div>
@@ -61,7 +63,7 @@ const FlagMenu = ({
         </div>
 
         <div className={styles.reasonSection}>
-          <label>Why is this suspicious?</label>
+          <label id="reason-label">Why is this suspicious?</label>
           {predefinedReasons.map((reason) => (
             <label key={reason} className={styles.radioLabel}>
               <input
@@ -72,6 +74,7 @@ const FlagMenu = ({
                 onChange={(e) =>
                   setSelectedReason((e.target as HTMLInputElement).value)
                 }
+                aria-labelledby="reason-label"
               />
               {reason}
             </label>
@@ -86,6 +89,7 @@ const FlagMenu = ({
                 setCustomReason((e.target as HTMLTextAreaElement).value)
               }
               rows={3}
+              aria-label="Describe the issue"
             />
           )}
         </div>

@@ -21,6 +21,7 @@ enum State {
 }
 
 const ICON_SIZE = 30;
+const CONVERSATIONAL_LOOP_DELAY = 500;
 
 const App = () => {
   const [metaVisible, setMetaVisible] = useState<boolean>(false);
@@ -54,11 +55,12 @@ const App = () => {
       }
 
       setState(State.IDLE);
-    } catch (e) {
+    } catch (error) {
+      console.error('Failed to process query:', error);
       setState(State.IDLE);
     } finally {
       if (conversationalLoopRef.current && conversationalMode) {
-        setTimeout(() => startListening(), 500);
+        setTimeout(() => startListening(), CONVERSATIONAL_LOOP_DELAY);
       }
     }
   };
@@ -73,8 +75,10 @@ const App = () => {
     try {
       speechToTextRef.current.start();
       setState(State.LISTENING);
-    } catch (e) {
+    } catch (error) {
+      console.error('Failed to start speech recognition:', error);
       speechToTextRef.current = null;
+      setState(State.IDLE);
     }
   };
 
@@ -90,7 +94,8 @@ const App = () => {
       } else {
         setState(State.IDLE);
       }
-    } catch (e) {
+    } catch (error) {
+      console.error('Failed to stop speech recognition:', error);
       speechToTextRef.current = null;
       setState(State.IDLE);
     } finally {
@@ -99,18 +104,20 @@ const App = () => {
         conversationalLoopRef.current &&
         conversationalMode
       ) {
-        setTimeout(() => startListening(), 500);
+        setTimeout(() => startListening(), CONVERSATIONAL_LOOP_DELAY);
       }
     }
   };
 
   useEffect(() => {
+    if (conversationalMode) {
+      return;
+    }
+
     const speechToText = new SpeechToText();
     let started = false;
 
     const keydown = (event: KeyboardEvent) => {
-      if (conversationalMode) return;
-
       if (event.code === 'Space' || event.key === ' ') {
         event.preventDefault();
       }
@@ -120,18 +127,26 @@ const App = () => {
         (event.target as HTMLTextAreaElement)?.type !== 'textarea'
       ) {
         setState(State.LISTENING);
-        speechToText.start();
-        started = true;
+        try {
+          speechToText.start();
+          started = true;
+        } catch (error) {
+          console.error('Failed to start speech recognition:', error);
+          setState(State.IDLE);
+        }
       }
     };
 
     const keyup = async (event: KeyboardEvent) => {
-      if (conversationalMode) return;
-
       if (event.code === 'Space' || event.key === ' ') {
         started = false;
-        const text = await speechToText.stop();
-        await processQuery(text);
+        try {
+          const text = await speechToText.stop();
+          await processQuery(text);
+        } catch (error) {
+          console.error('Failed to stop speech recognition:', error);
+          setState(State.IDLE);
+        }
       }
     };
 
@@ -141,6 +156,9 @@ const App = () => {
     return () => {
       document.removeEventListener('keydown', keydown);
       document.removeEventListener('keyup', keyup);
+      speechToText.stop().catch((error) => {
+        console.error('Failed to stop speech recognition on cleanup:', error);
+      });
     };
   }, [conversationalMode]);
 
@@ -151,7 +169,9 @@ const App = () => {
     } else {
       conversationalLoopRef.current = false;
       if (speechToTextRef.current) {
-        speechToTextRef.current.stop().catch(() => {});
+        speechToTextRef.current.stop().catch((error) => {
+          console.error('Failed to stop speech recognition on cleanup:', error);
+        });
         speechToTextRef.current = null;
       }
       audioPlayerRef.current.stop();
@@ -191,6 +211,12 @@ const App = () => {
                 ? 'Exit conversational mode'
                 : 'Enter conversational mode'
             }
+            aria-label={
+              conversationalMode
+                ? 'Exit conversational mode'
+                : 'Enter conversational mode'
+            }
+            aria-pressed={conversationalMode}
           >
             {conversationalMode ? <Mic size={20} /> : <MicOff size={20} />}
           </button>
@@ -206,6 +232,15 @@ const App = () => {
               handleVoiceButtonClick();
             }
           }}
+          aria-label={
+            state === State.IDLE
+              ? 'Start voice query'
+              : state === State.LISTENING
+                ? 'Stop listening'
+                : state === State.THINKING
+                  ? 'Processing query'
+                  : 'Speaking answer'
+          }
         >
           {state === State.IDLE ? (
             <FileQuestion size={ICON_SIZE} />
@@ -258,16 +293,21 @@ export const renderApp = (id: string) => {
   document.body.appendChild(root);
   root && render(createElement(App, {}), root);
   root.classList.add(styles.container);
-  window.setTimeout(() => root.classList.add(styles.containerVisible), 10);
+  const ANIMATION_DELAY = 10;
+  window.setTimeout(
+    () => root.classList.add(styles.containerVisible),
+    ANIMATION_DELAY
+  );
 };
 
 export const removeApp = (id: string) => {
   const root = document.getElementById(id);
   if (root) {
     root.classList.remove(styles.containerVisible);
+    const REMOVAL_DELAY = 200;
     window.setTimeout(() => {
       render(null, root);
       root.remove();
-    }, 200);
+    }, REMOVAL_DELAY);
   }
 };

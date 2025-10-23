@@ -23,8 +23,17 @@ const CONFIDENCE_SCORES = {
   WIKIPEDIA_CONSISTENCY_THRESHOLD: 0.3,
   DOMAIN_CONFIDENCE_THRESHOLD: 60,
   MISLEADING_CONFIDENCE_THRESHOLD: 50,
+  DEFAULT_CONFIDENCE: 50,
+  SHORT_REASON_MAX_LENGTH: 50,
+  SHORT_REASON_MAX_WORDS: 7,
 } as const;
 
+/**
+ * Calculates the confidence score for a verification result by averaging scores
+ * from multiple verification sources (Google Fact Check, Wikipedia, domain reputation, LLM)
+ * @param result - The verification result containing data from various sources
+ * @returns Confidence score from 0-100
+ */
 const calculateConfidence = (result: VerificationResult): number => {
   let confidence = 0;
   let factors = 0;
@@ -77,7 +86,9 @@ const calculateConfidence = (result: VerificationResult): number => {
     confidence += result.llmAnalysis.confidence;
   }
 
-  return factors > 0 ? Math.round(confidence / factors) : 50;
+  return factors > 0
+    ? Math.round(confidence / factors)
+    : CONFIDENCE_SCORES.DEFAULT_CONFIDENCE;
 };
 
 const determineVerdict = (
@@ -128,6 +139,14 @@ const determineVerdict = (
   return 'UNVERIFIED';
 };
 
+/**
+ * Runs the complete verification pipeline for a claim, checking multiple sources
+ * @param request - The flag request containing the claim and context
+ * @param googleApiKey - Optional Google Fact Check API key
+ * @param includeWikipedia - Whether to include Wikipedia verification
+ * @param includeDomainCheck - Whether to include domain reputation check
+ * @returns Promise resolving to verification results from all sources
+ */
 export const runVerificationPipeline = async (
   request: FlagRequest,
   googleApiKey?: string,
@@ -182,8 +201,14 @@ const generateShortReason = (
   verdict: Verdict,
   userReason?: string
 ): string => {
-  if (userReason && userReason.length <= 50) {
-    return userReason.split(' ').slice(0, 7).join(' ');
+  if (
+    userReason &&
+    userReason.length <= CONFIDENCE_SCORES.SHORT_REASON_MAX_LENGTH
+  ) {
+    return userReason
+      .split(' ')
+      .slice(0, CONFIDENCE_SCORES.SHORT_REASON_MAX_WORDS)
+      .join(' ');
   }
 
   if (verificationResults.googleFactCheck?.found) {
@@ -207,7 +232,7 @@ const generateShortReason = (
 
   if (verificationResults.llmAnalysis?.reasoning) {
     const words = verificationResults.llmAnalysis.reasoning.split(' ');
-    return words.slice(0, 7).join(' ');
+    return words.slice(0, CONFIDENCE_SCORES.SHORT_REASON_MAX_WORDS).join(' ');
   }
 
   if (verdict === 'FALSE') return 'Likely false information';
@@ -228,7 +253,7 @@ export const createFlaggedClaim = (
   );
 
   return {
-    id: `flag-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `flag-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
     text: request.text,
     elementId: request.elementId,
     context: request.context,

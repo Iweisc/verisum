@@ -6,6 +6,7 @@ import styles from './popup.module.css';
 import Initializer from './Initializer';
 import App from './App';
 import { VectorDBStats } from '../helpers/types';
+import { ErrorBoundary } from '../theme';
 
 const Popup = () => {
   const [initialized, setInitialized] = useState<boolean>(false);
@@ -13,18 +14,20 @@ const Popup = () => {
   const [documentTitle, setDocumentTitle] = useState<string>('');
 
   return (
-    <div className={styles.root}>
-      {!initialized ? (
-        <Initializer
-          className={styles.initializer}
-          setInitialized={() => setInitialized(true)}
-          setStats={setStats}
-          setDocumentTitle={setDocumentTitle}
-        />
-      ) : (
-        <App stats={stats} documentTitle={documentTitle} />
-      )}
-    </div>
+    <ErrorBoundary>
+      <div className={styles.root}>
+        {!initialized ? (
+          <Initializer
+            className={styles.initializer}
+            setInitialized={() => setInitialized(true)}
+            setStats={setStats}
+            setDocumentTitle={setDocumentTitle}
+          />
+        ) : (
+          <App stats={stats} documentTitle={documentTitle} />
+        )}
+      </div>
+    </ErrorBoundary>
   );
 };
 

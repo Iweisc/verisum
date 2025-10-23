@@ -12,7 +12,6 @@ const HISTORY_KEY = 'verisum_query_history';
 const MAX_HISTORY = 10;
 
 const App = ({
-  stats,
   documentTitle,
 }: {
   stats: VectorDBStats | null;
@@ -78,9 +77,9 @@ const App = ({
         },
         [HISTORY_KEY]: updatedHistory,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setIsStreaming(false);
-      const errorMessage = err?.message || '';
+      const errorMessage = err instanceof Error ? err.message : String(err);
       if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
         setError('Network error. Check your connection and try again.');
       } else if (errorMessage.includes('rate limit')) {
@@ -99,10 +98,13 @@ const App = ({
 
   return (
     <div className={styles.root}>
-      <div className={styles.tabs}>
+      <div className={styles.tabs} role="tablist">
         <button
           className={`${styles.tab} ${activeTab === 'questions' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('questions')}
+          role="tab"
+          aria-selected={activeTab === 'questions'}
+          aria-controls="questions-panel"
         >
           <MessageCircleQuestion size={16} />
           Questions
@@ -110,6 +112,9 @@ const App = ({
         <button
           className={`${styles.tab} ${activeTab === 'factcheck' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('factcheck')}
+          role="tab"
+          aria-selected={activeTab === 'factcheck'}
+          aria-controls="factcheck-panel"
         >
           <Shield size={16} />
           Fact Check

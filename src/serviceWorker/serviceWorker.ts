@@ -5,6 +5,7 @@ import {
   createFlaggedClaim,
 } from '../helpers/factCheck/verificationPipeline';
 import { FlagRequest, FlaggedClaim } from '../helpers/factCheck/types';
+import { apiRateLimiter } from '../helpers/RateLimiter';
 
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 const OPENAI_BASE_URL = import.meta.env.VITE_OPENAI_BASE_URL;
@@ -37,6 +38,12 @@ const saveFlagsToStorage = async (): Promise<void> => {
 
 loadFlagsFromStorage();
 
+/**
+ * Extracts sources that are actually cited in the answer using [1], [2] notation
+ * @param answer - The LLM-generated answer with citation markers
+ * @param allSources - All available sources from the vector DB
+ * @returns Array of sources that were actually cited in the answer
+ */
 const extractCitedSources = (
   answer: string,
   allSources: Array<Source>
@@ -76,6 +83,13 @@ ${documents.map((document, index) => `[${index + 1}] ${document}`).join('\n\n')}
 QUESTION:
 ${query}`;
 
+/**
+ * Runs the language model to answer a query based on page content
+ * @param query - The user's question
+ * @param documentTitle - The title of the webpage being queried
+ * @param callback - Optional callback for streaming responses
+ * @returns Promise resolving to answer, cited sources, and the full prompt
+ */
 const runLanguageModel = async (
   query: string,
   documentTitle: string,
@@ -108,6 +122,10 @@ const runLanguageModel = async (
   const dbResponse = await queryVectorDB(query);
 
   const prompt = generatePrompt(dbResponse.documentParts, documentTitle, query);
+
+  if (!apiRateLimiter.tryConsume()) {
+    throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+  }
 
   const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
     method: 'POST',
@@ -166,7 +184,9 @@ const runLanguageModel = async (
                   prompt,
                 });
               }
-            } catch (e) {}
+            } catch (error) {
+              console.error('Failed to parse SSE data:', error);
+            }
           }
         }
       }
@@ -185,7 +205,7 @@ const runLanguageModel = async (
   };
 };
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === 'initializeVectorDB') {
     const { url, parts } = request.payload;
     initializeVectorDB(url, parts)
@@ -252,7 +272,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const { url } = request.payload;
     const urlFlags: FlaggedClaim[] = [];
 
-    for (const [key, claim] of factCheckCache.entries()) {
+    for (const [_key, claim] of factCheckCache.entries()) {
       if (claim.url === url) {
         urlFlags.push(claim);
       }
@@ -277,7 +297,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
 
         const { parts, url, documentTitle } = response;
-        const pageContent = parts.map((p: any) => p.content).join('\n\n');
+        const pageContent = parts
+          .map((p: { content: string }) => p.content)
+          .join('\n\n');
 
         const factCheckPrompt = `You are a fact-checking AI. Analyze the following webpage content and identify ALL false, misleading, or unverifiable claims.
 
@@ -305,6 +327,13 @@ Respond in JSON format:
 }
 
 Be thorough and flag EVERYTHING suspicious, even if it seems absurd.`;
+
+        if (!apiRateLimiter.tryConsume()) {
+          sendResponse({
+            error: 'Rate limit exceeded. Please wait a moment and try again.',
+          });
+          return;
+        }
 
         const llmResponse = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
           method: 'POST',
@@ -360,13 +389,17 @@ Be thorough and flag EVERYTHING suspicious, even if it seems absurd.`;
             .toLowerCase()
             .split(/\s+/)
             .filter((w: string) => w.length > 3);
-          const matchingPart = parts.find((p: any) => {
-            const partLower = p.content.toLowerCase();
-            const matchedWords = claimWords.filter((word: string) =>
-              partLower.includes(word)
-            );
-            return matchedWords.length >= Math.min(5, claimWords.length * 0.6);
-          });
+          const matchingPart = parts.find(
+            (p: { content: string; id: string }) => {
+              const partLower = p.content.toLowerCase();
+              const matchedWords = claimWords.filter((word: string) =>
+                partLower.includes(word)
+              );
+              return (
+                matchedWords.length >= Math.min(5, claimWords.length * 0.6)
+              );
+            }
+          );
 
           if (!matchingPart) {
             continue;
@@ -406,12 +439,16 @@ Be thorough and flag EVERYTHING suspicious, even if it seems absurd.`;
                 reason: llmClaim.reason,
               },
             });
-          } catch (e) {}
+          } catch (error) {
+            console.error('Failed to highlight misinformation in tab:', error);
+          }
         }
 
         sendResponse({ success: true, flagsFound: scannedClaims.length });
-      } catch (error: any) {
-        sendResponse({ error: error.message || 'Scan failed' });
+      } catch (error: unknown) {
+        sendResponse({
+          error: error instanceof Error ? error.message : 'Scan failed',
+        });
       }
     })();
 
@@ -466,7 +503,7 @@ chrome.runtime.onConnect.addListener((port) => {
         });
 
         if (!response.ok) {
-          const error = await response.text();
+          await response.text();
           port.postMessage({
             action: 'tts-error',
             error: `TTS API error: ${response.status}`,
@@ -483,10 +520,10 @@ chrome.runtime.onConnect.addListener((port) => {
           messageId: request.messageId,
           done: true,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         port.postMessage({
           action: 'tts-error',
-          error: error?.message || 'Unknown TTS error',
+          error: error instanceof Error ? error.message : 'Unknown TTS error',
           messageId: request.messageId,
         });
       }

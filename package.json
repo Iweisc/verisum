@@ -7,7 +7,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --m development",
-    "build": "tsc && vite build"
+    "build": "tsc && vite build",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "typecheck": "tsc --noEmit"
   },
   "author": "Nico Martin <nico@sayhello.ch>",
   "license": "MIT",
@@ -18,7 +21,12 @@
     "@types/chrome": "^0.0.287",
     "@types/dom-speech-recognition": "^0.0.4",
     "@types/showdown": "^2.0.6",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
     "dotenv": "^16.4.5",
+    "eslint": "^9.38.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.0",
     "prettier": "^3.4.1",
     "typescript": "^5.7.2",
     "vite": "^6.0.0"

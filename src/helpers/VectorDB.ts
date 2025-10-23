@@ -23,6 +23,9 @@ class VectorDB<T = {}> {
   public entries: Array<VectorizedEntry<T>> = [];
   private extractor: FeatureExtractionPipeline | null = null;
 
+  /**
+   * Initializes the feature extraction model if not already loaded
+   */
   public async setModel(): Promise<void> {
     if (!this.extractor) {
       await this.loadExtractor();
@@ -36,6 +39,12 @@ class VectorDB<T = {}> {
     });
   };
 
+  /**
+   * Adds entries to the vector database by computing their embeddings
+   * @param entries - Array of entries to add with text and metadata
+   * @param callback - Optional callback to track progress (processed, total)
+   * @returns Promise resolving to the vectorized entries
+   */
   public async addEntries(
     entries: Array<Entry<T>>,
     callback: ((processed: number, total: number) => void) | null = null
@@ -69,6 +78,13 @@ class VectorDB<T = {}> {
     return this.entries;
   }
 
+  /**
+   * Searches the vector database for entries similar to the query
+   * @param query - The search query text
+   * @param numberOfResults - Maximum number of results to return
+   * @param similarityThreshold - Minimum cosine similarity score (0-1)
+   * @returns Array of tuples containing matched entries and their similarity scores
+   */
   public async search(
     query: string,
     numberOfResults: number = DEFAULTS.SEARCH_RESULTS,

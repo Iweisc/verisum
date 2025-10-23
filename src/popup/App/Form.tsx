@@ -96,6 +96,7 @@ const Form = ({
             className={styles.textarea}
             placeholder="Ask a question..."
             disabled={loading}
+            aria-label="Enter your question about the page"
             onFocus={() => {
               setShowSuggestions(false);
               setShowHistory(false);
@@ -116,6 +117,7 @@ const Form = ({
           disabled={loading}
           className={styles.submitButton}
           title={loadingStage || 'Send'}
+          aria-label={loadingStage || 'Submit query'}
         >
           {loading ? (
             <Loader className={styles.buttonLoader} />
@@ -130,6 +132,7 @@ const Form = ({
             onClick={() => setShowHistory(!showHistory)}
             disabled={loading}
             title="Show query history"
+            aria-label="Show query history"
           >
             <History size={18} />
           </button>
