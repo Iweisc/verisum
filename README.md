@@ -130,7 +130,7 @@ verisum/
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        User Interface                        │
+│                        User Interface                       │
 ├──────────────────────┬──────────────────────────────────────┤
 │   Popup (Icon)       │   Spotlight (Alt+Space)              │
 │   - Suggestions      │   - Quick overlay                    │
@@ -140,24 +140,24 @@ verisum/
                            │
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                    Content Script Layer                      │
+│                    Content Script Layer                     │
 │   - Extract page content (h1-6, p tags)                     │
-│   - Handle user interactions                                 │
+│   - Handle user interactions                                │
 │   - Highlight sources on page                               │
-│   - State management                                         │
+│   - State management                                        │
 └─────────────────────────────────────────────────────────────┘
                            │
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                   Service Worker (Background)                │
+│                   Service Worker (Background)               │
 ├─────────────────────────────────────────────────────────────┤
-│   VectorDB:                                                  │
-│   - Xenova/all-MiniLM-L6-v2 (WASM, q8 quantization)        │
+│   VectorDB:                                                 │
+│   - Xenova/all-MiniLM-L6-v2 (WASM, q8 quantization)         │
 │   - Generate embeddings for page paragraphs                 │
-│   - Vector search (top 7 results, 0.5 threshold)           │
-│   - Cache: 1 hour TTL, URL-validated                       │
-│                                                              │
-│   AI Integration:                                            │
+│   - Vector search (top 7 results, 0.5 threshold)            │ 
+│   - Cache: 1 hour TTL, URL-validated                        │
+│                                                             │
+│   AI Integration:                                           │
 │   - Stream responses from OpenAI-compatible API             │
 │   - Query cache: 30 min TTL                                 │
 │   - Token optimization (~350 tokens per query)              │
@@ -165,9 +165,9 @@ verisum/
                            │
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                    External AI Service                       │
+│                    External AI Service                      │
 │   - OpenAI-compatible API endpoint                          │
-│   - Model: claude-3-5-haiku-20241022 (configurable)        │
+│   - Model: claude-3-5-haiku-20241022 (configurable)         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
