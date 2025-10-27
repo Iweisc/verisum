@@ -4,14 +4,14 @@
 
 ## Features
 
-### 🎯 Core Functionality
+### Core Functionality
 
 - **Instant Answers**: Ask questions about any webpage and get AI-powered answers with cited sources
 - **Smart Search**: Vector-based search finds the most relevant content on the page
 - **Source Citations**: Every answer includes clickable sources that highlight the referenced text
 - **Streaming Responses**: See answers appear in real-time as the AI generates them
 
-### 💡 User Interface
+### User Interface
 
 #### Popup (Click Extension Icon)
 
@@ -38,7 +38,7 @@
 - **↑/↓**: Navigate through sources
 - **Enter**: Select/highlight source on page
 
-### 🎨 UX Improvements
+### UX Improvements
 
 - Multi-stage progress indicators during initialization
 - Visual feedback with hover effects and animations
